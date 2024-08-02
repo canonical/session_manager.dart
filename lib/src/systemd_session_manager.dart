@@ -131,6 +131,56 @@ class SystemdSessionManager {
     return sessions;
   }
 
+  Future<Iterable<SystemdUser>> listUsers() async {
+    final response = await _object
+        .callMethod(managerName, 'ListUsers', [],
+            replySignature: DBusSignature.array(
+              DBusSignature.struct([
+                DBusSignature('u'),
+                DBusSignature('s'),
+                DBusSignature('o'),
+              ]),
+            ))
+        .then((response) => response.values.first.asArray());
+    return response.map(
+      (e) => SystemdUser(
+        DBusRemoteObject(
+          _object.client,
+          name: busName,
+          path: e.asStruct()[2].asObjectPath(),
+        ),
+      ),
+    );
+    ;
+  }
+
+  Future<SystemdSession> getSessionByPID(int pid) async {
+    final response = await _object
+        .callMethod(
+          managerName,
+          'GetSessionByPID',
+          [DBusUint32(pid)],
+          replySignature: DBusSignature.struct([
+            DBusSignature('s'),
+            DBusSignature('u'),
+            DBusSignature('s'),
+            DBusSignature('s'),
+            DBusSignature('o'),
+          ]),
+        )
+        .then((response) => response.values.first.asArray());
+    final sessions = response.map(
+      (e) => SystemdSession(
+        DBusRemoteObject(
+          _object.client,
+          name: busName,
+          path: e.asStruct()[4].asObjectPath(),
+        ),
+      ),
+    );
+    return sessions.first;
+  }
+
   /// Power off the system.
   Future<void> powerOff(bool interactive) {
     return _object.callMethod(
@@ -283,12 +333,60 @@ class SystemdSession {
 
   Future<String> get id async =>
       (await _object.getProperty(sessionName, 'Id')).asString();
+
   Future<bool> get active async =>
       (await _object.getProperty(sessionName, 'Active')).asBoolean();
-  Future<void> lock() => _object.callMethod(sessionName, 'Lock', [],
-      replySignature: DBusSignature(''));
-  Future<void> terminate() => _object.callMethod(sessionName, 'Terminate', [],
-      replySignature: DBusSignature(''));
+
+  Future<String> get type async =>
+      (await _object.getProperty(sessionName, 'Type')).asString();
+
+  Future<String> get classString async =>
+      (await _object.getProperty(sessionName, 'Class')).asString();
+
+  Future<String> get state async =>
+      (await _object.getProperty(sessionName, 'State')).asString();
+
+  Future<String> get name async =>
+      (await _object.getProperty(sessionName, 'Name')).asString();
+
+  Future<String> get user async =>
+      (await _object.getProperty(sessionName, 'User')).asString();
+
+  Future<String> get seat async =>
+      (await _object.getProperty(sessionName, 'Seat')).asString();
+
+  Future<void> lock({bool interactive = false}) =>
+      _object.callMethod(sessionName, 'Lock', [],
+          allowInteractiveAuthorization: interactive,
+          replySignature: DBusSignature(''));
+  Future<void> terminate({bool interactive = false}) =>
+      _object.callMethod(sessionName, 'Terminate', [],
+          allowInteractiveAuthorization: interactive,
+          replySignature: DBusSignature(''));
+
+  @override
+  String toString() {
+    return 'SystemdClient(${_object.path.value}';
+  }
+}
+
+class SystemdUser {
+  SystemdUser(this._object);
+  final DBusRemoteObject _object;
+
+  static final String objectName = 'org.freedesktop.login1.User';
+
+  Future<int> get uid async =>
+      (await _object.getProperty(objectName, 'UID')).asUint32();
+
+  Future<int> get gid async =>
+      (await _object.getProperty(objectName, 'GID')).asUint32();
+
+  Future<String> get name async =>
+      (await _object.getProperty(objectName, 'Name')).asString();
+
+  Future<String> get state async =>
+      (await _object.getProperty(objectName, 'State')).asString();
 
   @override
   String toString() {

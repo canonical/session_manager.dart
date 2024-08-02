@@ -726,7 +726,7 @@ class MockSystemdSession extends _i1.Mock implements _i10.SystemdSession {
         returnValue: _i7.Future<bool>.value(false),
       ) as _i7.Future<bool>);
   @override
-  _i7.Future<void> lock() => (super.noSuchMethod(
+  _i7.Future<void> lock({bool interactive = false}) => (super.noSuchMethod(
         Invocation.method(
           #lock,
           [],
@@ -735,7 +735,7 @@ class MockSystemdSession extends _i1.Mock implements _i10.SystemdSession {
         returnValueForMissingStub: _i7.Future<void>.value(),
       ) as _i7.Future<void>);
   @override
-  _i7.Future<void> terminate() => (super.noSuchMethod(
+  _i7.Future<void> terminate({bool interactive = false}) => (super.noSuchMethod(
         Invocation.method(
           #terminate,
           [],
